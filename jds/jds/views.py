@@ -26,7 +26,8 @@ def _extract_and_validate_dot(request, kwargs):
 @view_config(route_name='post_dot', renderer='templates/mytemplate.pt', request_method='POST')
 def post_dot(request):
     "Open Tree API methods relating to creating (and importing) resources"
-    dot = request.POST['dot'].file.read().strip()
+    lines = [i.strip() for i in request.POST['dot'].file.readlines()]
+    dot = " \\n".join(lines)
     return {'dot': dot}
 
 

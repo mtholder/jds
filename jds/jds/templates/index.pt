@@ -23,6 +23,7 @@
     <div class="starter-template">
       <form method="POST" action="dot"  accept-charset="utf-8" enctype="multipart/form-data">
         <div>
+          <label for="dot">Dot file:</label>
           <input type="file" name="dot" id="name" value="" />
         </div>
       <input type="submit" value="Submit"/>
