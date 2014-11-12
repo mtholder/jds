@@ -1,11 +1,11 @@
-#!/bin/sh
+#!/bin/bash
 set -x
 if ! test -d env
 then
-    virtualenv env | exit
+    virtualenv env || exit
 fi
-source env/bin/activate
+. env/bin/activate || exit
 pip install -r requirements.txt
 
 echo "You will need to:"
-echo "  source env/bin/activate"
+echo "  . env/bin/activate"

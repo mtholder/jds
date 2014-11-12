@@ -1,1 +1,2 @@
-flask
+pyramid==1.5.2
+
