@@ -1,8 +1,12 @@
 from pyramid.view import view_config
+from pyramid.httpexceptions import HTTPCreated, HTTPBadRequest
 from pyramid.response import Response
 import logging
 
 _LOG = logging.getLogger(__name__)
+def _raise_HTTP_from_msg(msg):
+    raise HTTPBadRequest(body=_err_body(msg))
+
 def _extract_dot_from_http_call(request, **kwargs):
     """Returns the dot blob from `kwargs` or the request.body"""
     try:
@@ -28,7 +32,11 @@ def post_dot(request):
     "Open Tree API methods relating to creating (and importing) resources"
     lines = [i.strip() for i in request.POST['dot'].file.readlines()]
     dot = " \\n".join(lines)
-    return {'dot': dot}
+    err = ''
+    if "'" in dot:
+        err = "Sorry. I found a single-quote in your dot file, and that breaks our rendering code"
+        raise HTTPBadRequest(err)
+    return {'dot': dot, 'error': err}
 
 
 @view_config(route_name='index', renderer='templates/index.pt')

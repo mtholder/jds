@@ -8,6 +8,13 @@ s = os.environ.get('DOT_FILE_VIZ_SERVER', 'http://127.0.0.1:6543')
 url = s + '/dot'
 fn = sys.argv[1]
 resp = requests.post(url, files={'dot': open(fn, 'rb')})
+t = resp.text
+try:
+    resp.raise_for_status()
+except:
+    sys.stderr.write('Content: {t}\n'.format(t=t))
+    raise
+    
 fd, fn = tempfile.mkstemp() # deleted when goes out of scope (closed)
 os.write(fd, resp.text)
 os.fsync(fd)

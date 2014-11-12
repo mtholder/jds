@@ -44,6 +44,7 @@ svg {
       <svg id="graphContainer">
         <g/>
       </svg>
+      <div>${error}</div>
     </div>
     <div class="row">
       <div class="links">
