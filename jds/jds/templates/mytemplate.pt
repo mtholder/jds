@@ -21,6 +21,8 @@
   <body>
 <style type='text/css'>
 svg {
+    width: 100%;
+    height: 100%;
     overflow: hidden;
 }
 
@@ -39,6 +41,66 @@ svg {
     stroke-width: 1.5px;
     fill: none;
 }
+
+</style>
+
+<style>
+
+  .blank text {
+    font-weight: 300;
+    font-size: 14px;
+  }
+
+  .blank .node rect {
+    stroke-width: 1.5px;
+    stroke: #bbb;
+    fill: #666;
+  }
+
+  .blank .node.box rect {
+    stroke-width: 1.5px;
+    stroke: #bbb;
+    fill: #666;
+  }
+
+  .blank .node.oval rect {
+    stroke-width: 1.5px;
+    stroke: #bbb;
+    fill: #F66;
+  }
+
+  .blank .status {
+    height: 100%;
+    width: 15px;
+    display: block;
+    float: left;
+    border-top-left-radius: 5px;
+    border-bottom-left-radius: 5px;
+    margin-right: 4px;
+  }
+
+
+  .warn {
+    -webkit-animation-name: flash;
+    animation-name: flash;
+  }
+
+  .blank .node g div {
+    width: 200px;
+    height: 40px;
+    color: #f00;
+  }
+
+  .blank .edgeLabel text {
+    width: 50px;
+    fill: #fff;
+  }
+
+  .blank .edgePath path {
+    stroke: #999;
+    stroke-width: 1.5px;
+    fill: #999;
+  }
 </style>
     <div class="blank">
       <svg id="graphContainer">
@@ -66,22 +128,103 @@ svg {
     <script src="//oss.maxcdn.com/libs/jquery/1.10.2/jquery.min.js"></script>
     <script src="//oss.maxcdn.com/libs/twitter-bootstrap/3.0.3/js/bootstrap.min.js"></script>
     <script type='text/javascript' src="http://d3js.org/d3.v3.js"></script>
-    <script type='text/javascript' src="http://cpettitt.github.io/project/dagre-d3/v0.1.5/dagre-d3.min.js"></script>
+    <script type='text/javascript' src="static/js/dagre-d3.js"></script>
     <script type='text/javascript' src="http://cpettitt.github.io/project/graphlib-dot/v0.4.10/graphlib-dot.min.js"></script>
 <script type='text/javascript'>
 window.onload=function(){
-    // Parse the DOT syntax into a graphlib object.
-    var g = graphlibDot.parse('${structure:dot}');
-    // Render the graphlib object using d3.
-    var renderer = new dagreD3.Renderer();
-    renderer.run(g, d3.select("svg g"));
+  // Parse the DOT syntax into a graphlib object.
+  var dotg = graphlibDot.parse('${structure:dot}');
+  // taken from etl-status and user-defined demos in dagreD3
+  var svg = d3.select("svg");
+  var inner = svg.select("g");
+  var zoom = d3.behavior.zoom().on("zoom", function() {
+        inner.attr("transform", "translate(" + d3.event.translate + ")" +
+                                    "scale(" + d3.event.scale + ")");
+      });
+  svg.call(zoom);
+  var render = new dagreD3.render();
+  // Add our custom shape (a record)
+  render.shapes().record = function(parent, bbox, node) {
+    var w = bbox.width,
+        h = bbox.height,
+        points = [
+          { x:   0, y:        0 },
+          { x:   w, y:        0 },
+          { x:   w, y:       -h },
+          { x: w/2, y: -h * 3/2 },
+          { x:   0, y:       -h }
+        ];
+        shapeSvg = parent.insert("polygon", ":first-child")
+          .attr("points", points.map(function(d) { return d.x + "," + d.y; }).join(" "))
+          .attr("transform", "translate(" + (-w/2) + "," + (h * 3/4) + ")");
 
+    node.intersect = function(point) {
+      return dagreD3.intersect.polygon(node, points, point);
+    };
 
-    // Optional - resize the SVG element based on the contents.
-    var svg=document.querySelector('#graphContainer');
-    var bbox=svg.getBBox();
-    svg.style.width=bbox.width + 40.0 + "px";
-    svg.style.height=bbox.height + 40.0 + "px";
+    return shapeSvg;
+  };
+  var g = new dagreD3.graphlib.Graph();
+  g.setGraph({
+    nodesep: 70,
+    ranksep: 50,
+    marginx: 20,
+    marginy: 20
+  });
+
+  function draw() {
+    for (var id in dotg._nodes) {
+      var dagnode = dotg._nodes[id];
+      var attr = dagnode.value;
+      var className = attr.shape;
+      var html = "<div>";
+      //html += "<span class=status></span>";
+      //html += "<span class=name>" + attr.label + "</span>";
+      html += "</div>";
+      var fillcolor, shape;
+      if (attr.fillcolor) {
+        fillcolor = attr.fillcolor;
+      } else {
+        fillcolor = "#F00";
+      }
+      shape = "rect";
+      if (attr.shape == "oval") {
+        shape = "ellipse";
+      } else if (attr.shape == "record") {
+        shape = "record";
+      }
+      g.setNode(id, {
+        labelType: "html",
+        label: html,
+        rx: 5,
+        ry: 5,
+        padding: 0,
+        class: className,
+        shape: shape,
+        fill: fillcolor
+      });
+    }
+    for (id in dotg._edges) {
+      var dagedge = dotg._edges[id];
+      g.setEdge(dagedge.u, dagedge.v, {});
+    }
+
+    inner.call(render, g);
+
+    // Zoom and scale to fit
+    var zoomScale = zoom.scale();
+    var graphWidth = g.graph().width + 80;
+    var graphHeight = g.graph().height + 40;
+    var width = parseInt(svg.style("width").replace(/px/, ""));
+    var height = parseInt(svg.style("height").replace(/px/, ""));
+    zoomScale = Math.min(width / graphWidth, height / graphHeight);
+    var translate = [(width/2) - ((graphWidth*zoomScale)/2), (height/2) - ((graphHeight*zoomScale)/2)];
+    zoom.translate(translate);
+    zoom.scale(zoomScale);
+    zoom.event(d3.select("svg"));
+  }
+  draw();
+
 }
 </script>
   </body>
