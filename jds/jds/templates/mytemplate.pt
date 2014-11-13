@@ -20,31 +20,11 @@
 
   <body>
 <style type='text/css'>
-svg {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-}
-
-.node rect {
-    stroke: #333;
-    stroke-width: 1.5px;
-    fill: #fff;
-}
-
-.edgeLabel rect {
-    fill: #fff;
-}
-
-.edgePath {
-    stroke: #333;
-    stroke-width: 1.5px;
-    fill: none;
-}
-
-</style>
-
-<style>
+  svg {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+  }
 
   .blank text {
     font-weight: 300;
@@ -76,6 +56,9 @@ svg {
     stroke-dasharray: 3, 3;
   }
 
+  
+
+
   .blank .grayoval ellipse {
     stroke-width: 1.5px;
     stroke: #000;
@@ -98,15 +81,12 @@ svg {
     margin-right: 4px;
   }
 
-
   .warn {
     -webkit-animation-name: flash;
     animation-name: flash;
   }
 
   .blank .node g div {
-    width: 200px;
-    height: 40px;
     color: #f00;
   }
 
@@ -114,12 +94,13 @@ svg {
     width: 50px;
     fill: #fff;
   }
-
-  .blank .edgePath path {
-    stroke: #999;
-    stroke-width: 1.5px;
-    fill: #999;
+  .blank .daglabel {
+    font-weight: 300;
+    font-size: 14px;
+    font-family: "Lucida Console", Monaco, monospace;
+    color: #000;
   }
+
 </style>
     <div class="blank">
       <svg id="graphContainer">
@@ -160,20 +141,23 @@ window.onload=function(){
         inner.attr("transform", "translate(" + d3.event.translate + ")" +
                                     "scale(" + d3.event.scale + ")");
       });
+
   svg.call(zoom);
   var render = new dagreD3.render();
   // Add our custom shape (a record)
   render.shapes().record = function(parent, bbox, node) {
+    var ypad = -12;
     var w = bbox.width,
         h = bbox.height,
         points = [
-          { x:   0, y:        0 },
-          { x:   w, y:        0 },
-          { x:   w, y:       -h* 2 },
-          { x:   0, y: -h * 2 },
-          { x:   0, y: -h },
-          { x:   w, y: -h },
-          { x:   0, y: -h }
+          { x:   0, y:  0 + ypad},
+          { x:   w, y:  0 + ypad },
+          { x:   w, y: -h + ypad},
+          { x:   0, y: -h + ypad},
+          { x:   0, y: -h/2 + ypad},
+          { x:   0, y: -h/2 + ypad},
+          { x:   w, y: -h/2 + ypad},
+          { x:   0, y: -h/2 + ypad}
         ];
         shapeSvg = parent.insert("polygon", ":first-child")
           .attr("points", points.map(function(d) { return d.x + "," + d.y; }).join(" "))
@@ -192,21 +176,42 @@ window.onload=function(){
     marginx: 20,
     marginy: 20
   });
-
+  var charWidth = 15;
+  var charHeight = 15;
   function draw() {
+    var className;
     for (var id in dotg._nodes) {
       var dagnode = dotg._nodes[id];
       var attr = dagnode.value;
-      var className;
       if (attr.style == 'dashed,filled') {
         className = 'dashed' + attr.fillcolor + attr.shape;
       } else {
         className = '' + attr.fillcolor + attr.shape;
       }
+      var ll = attr.label.replace("|", "\n");
+      ll = ll.replace("{", "");
+      ll = ll.replace("}", "");
+      var labelLines = ll.split("\n");
       var html = "<div>";
       html += "<span class=status></span>";
-      html += "<span class=name>" + attr.label + "</span>";
+      html += "<span class=daglabel>";
+      var maxLen = 0;
+      for (var lineInd = 0; lineInd < labelLines.length; ++lineInd) {
+        var labelLine = labelLines[lineInd];
+        if (maxLen < labelLine.length) {
+          maxLen = labelLine.length;
+        }
+        html += "<span class=labelline>" + labelLine + "</span>";
+        if (lineInd + 1 < labelLines.length) {
+          html += "<br />";
+        }
+      }
+      html += "</span>";
       html += "</div>";
+      var sizingBoxText = '<span class="sizing">' + html + '</span>';
+
+      var width = maxLen * charWidth;
+      var height = labelLines.length * charHeight;
       var fillcolor, shape;
       if (attr.fillcolor) {
         fillcolor = attr.fillcolor;
@@ -225,15 +230,25 @@ window.onload=function(){
         label: html,
         rx: 5,
         ry: 5,
-        padding: 0,
+        width: width,
+        height: height,
+        paddingLeft: 15,
         class: className,
         shape: shape,
         fill: fillcolor
       });
     }
+    var estyle;
     for (id in dotg._edges) {
       var dagedge = dotg._edges[id];
-      g.setEdge(dagedge.u, dagedge.v, {});
+      var attr = dagedge.value;
+      if (attr.style == 'dashed') {
+        estyle = "fill-opacity: 0; stroke: #000; stroke-width: 2px; stroke-dasharray: 3, 3";
+      } else {
+        estyle = "fill-opacity: 0; stroke: #000; stroke-width: 1.5px";
+      }
+      
+      g.setEdge(dagedge.u, dagedge.v, {style: estyle});
     }
 
     inner.call(render, g);
