@@ -30,7 +30,11 @@ def _extract_and_validate_dot(request, kwargs):
 @view_config(route_name='post_dot', renderer='templates/mytemplate.pt', request_method='POST')
 def post_dot(request):
     "Open Tree API methods relating to creating (and importing) resources"
-    lines = [i.strip() for i in request.POST['dot'].file.readlines()]
+    try:
+        lines = [i.strip() for i in request.POST['dot'].file.readlines()]
+    except:
+        err = 'dot file must be passed in as a "dot" argument'
+        raise HTTPBadRequest(err)
     dot = " \\n".join(lines)
     err = ''
     if "'" in dot:

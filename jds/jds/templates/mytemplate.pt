@@ -103,7 +103,7 @@
 
 </style>
     <div class="blank">
-      <svg id="graphContainer">
+      <svg id="graphContainer" height="800">
         <g/>
       </svg>
       <div>${error}</div>
