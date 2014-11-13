@@ -57,16 +57,35 @@ svg {
     fill: #666;
   }
 
-  .blank .node.box rect {
+  .blank .whitebox rect {
     stroke-width: 1.5px;
-    stroke: #bbb;
-    fill: #666;
+    stroke: #000;
+    fill: #fff;
   }
 
-  .blank .node.oval rect {
+  .blank .whiteoval ellipse {
     stroke-width: 1.5px;
-    stroke: #bbb;
-    fill: #F66;
+    stroke: #000;
+    fill: #fff;
+  }
+
+  .blank .dashedwhiteoval ellipse {
+    stroke-width: 1.5px;
+    stroke: #000;
+    fill: #fff;
+    stroke-dasharray: 3, 3;
+  }
+
+  .blank .grayoval ellipse {
+    stroke-width: 1.5px;
+    stroke: #000;
+    fill: #888;
+  }
+
+  .blank .whiterecord polygon {
+    stroke-width: 1.5px;
+    stroke: #000;
+    fill: #fff;
   }
 
   .blank .status {
@@ -150,9 +169,11 @@ window.onload=function(){
         points = [
           { x:   0, y:        0 },
           { x:   w, y:        0 },
-          { x:   w, y:       -h },
-          { x: w/2, y: -h * 3/2 },
-          { x:   0, y:       -h }
+          { x:   w, y:       -h* 2 },
+          { x:   0, y: -h * 2 },
+          { x:   0, y: -h },
+          { x:   w, y: -h },
+          { x:   0, y: -h }
         ];
         shapeSvg = parent.insert("polygon", ":first-child")
           .attr("points", points.map(function(d) { return d.x + "," + d.y; }).join(" "))
@@ -176,16 +197,21 @@ window.onload=function(){
     for (var id in dotg._nodes) {
       var dagnode = dotg._nodes[id];
       var attr = dagnode.value;
-      var className = attr.shape;
+      var className;
+      if (attr.style == 'dashed,filled') {
+        className = 'dashed' + attr.fillcolor + attr.shape;
+      } else {
+        className = '' + attr.fillcolor + attr.shape;
+      }
       var html = "<div>";
-      //html += "<span class=status></span>";
-      //html += "<span class=name>" + attr.label + "</span>";
+      html += "<span class=status></span>";
+      html += "<span class=name>" + attr.label + "</span>";
       html += "</div>";
       var fillcolor, shape;
       if (attr.fillcolor) {
         fillcolor = attr.fillcolor;
       } else {
-        fillcolor = "#F00";
+        fillcolor = "#0F0";
       }
       shape = "rect";
       if (attr.shape == "oval") {
@@ -193,6 +219,7 @@ window.onload=function(){
       } else if (attr.shape == "record") {
         shape = "record";
       }
+
       g.setNode(id, {
         labelType: "html",
         label: html,

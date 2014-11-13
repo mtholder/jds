@@ -281,12 +281,17 @@ function createNodes(selection, g, shapes) {
   var svgNodes = selection.selectAll("g.node")
     .data(simpleNodes, function(v) { return v; })
     .classed("update", true);
-
+  /*
+  var fullNodes = [];
+  for (var sni = 0 ; sni < simpleNodes.length ; ++sni) {
+    var snid = simpleNodes[sni];
+    fullNodes[sni] = g.node(snid);
+  } */
   svgNodes.selectAll("*").remove();
   svgNodes.enter()
     .append("g")
       .attr("class", "node")
-      .style("opacity", 0);
+      .style({"opacity":0});
   svgNodes.each(function(v) {
     var node = g.node(v),
         thisGroup = d3.select(this),
